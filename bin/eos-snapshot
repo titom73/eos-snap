@@ -1,0 +1,53 @@
+#!/usr/bin/python
+# coding: utf-8 -*-
+
+import sys
+import json
+import yaml
+import os
+import argparse
+from importlib.resources import path
+from jsonpath_ng.ext import parse
+from loguru import logger
+from eos_snap.devices import DeviceEos
+from eos_snap.test import TestCollection
+
+
+def read_cli():
+    parser = argparse.ArgumentParser(description='EOS Command snapshot script.')
+    parser.add_argument('--configuration', required=True,
+                        help='List of tests to snapshot')
+    parser.add_argument('--rootpath', required=False,
+                        default=str(os.getcwd()),
+                        help='Path where to save EOS snapshot')
+    parser.add_argument('--stage', required=False,
+                        default='pre',
+                        help='Which snapshot stage is running')
+    parser.add_argument('--verbose', required=False,
+                        default='info', help='Script verbosity')
+    return parser.parse_args()
+
+def load_configuration(yaml_path: str):
+    with open(yaml_path, "r") as stream:
+        try:
+            configuration = yaml.safe_load(stream)
+        except yaml.YAMLError as exc:
+            logger.error(exc)
+    return configuration['eos_snapshot']
+
+if __name__ == '__main__':
+    cli_options = read_cli()
+    logger.remove()
+    logger.add(sys.stderr, level=cli_options.verbose.upper(), colorize=True)
+
+    configuration = load_configuration(cli_options.configuration)
+    logger.debug('configuration is {}', configuration)
+
+    logger.info('Collecting snapshot for device(s): {}', configuration['devices'])
+    for device in configuration['devices']:
+        logger.info('  - Grab data from device {}', device)
+        eos = DeviceEos(
+            hostname=device, test_cases=configuration['test_cases'],
+            snapshot_root=cli_options.rootpath
+        )
+        eos.generate_snapshot(prefix='pre')

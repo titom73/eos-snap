@@ -1,0 +1,23 @@
+eos_snapshot:
+  devices:
+    - veos01
+
+  test_cases:
+    - name: Test01
+      command: 'show version'
+      path: 'unset'
+      check_key: 'unset'
+      iterator: 'unset'
+      snapshot: {}
+    - name: Test02
+      command: 'show interfaces description'
+      path: 'unset'
+      check_key: 'unset'
+      iterator: 'unset'
+      snapshot: {}
+    - name: Test01
+      command: 'show bgp evpn summary'
+      path: 'unset'
+      check_key: 'unset'
+      iterator: 'unset'
+      snapshot: {}
