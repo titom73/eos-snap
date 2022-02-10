@@ -21,9 +21,9 @@ class Operator():
         pass
 
     @staticmethod
-    def is_equal_nested_dicts(data_pre, data_post, check_keys = None):
+    def __is_equal_nested_dicts(data_pre, data_post, check_keys = None):
         """
-        is_equal_nested_dicts Helper to compare keys in nested dict
+        __is_equal_nested_dicts Helper to compare keys in nested dict
 
         Example:
         --------
@@ -55,7 +55,7 @@ class Operator():
             if key_iteration not in data_post.keys():
                 return TestResult(state=False, errors=[ErrorMessage(key=key_iteration, pre='Exists', post='Does not exist')])
             for check_key in check_keys:
-                logger.debug(f'Comparison for {key_iteration} / {check_key}: {data[check_key]} | {data_post[key_iteration][check_key]}')
+                message = f'Comparison for {key_iteration} / {check_key}: before: <green>{data[check_key]}</> | after: <green>{data_post[key_iteration][check_key]}</>'
                 if (
                     check_key in data
                     and data[check_key] != data_post[key_iteration][check_key]
@@ -63,12 +63,14 @@ class Operator():
                     result.state = False
                     error = ErrorMessage(key=key_iteration, pre=data[check_key], post=data_post[key_iteration][check_key])
                     result.errors.append(error)
+                    message = f'Comparison for {key_iteration} / {check_key}: before: <red>{data[check_key]}</> | after: <red>{data_post[key_iteration][check_key]}</>'
+                logger.opt(ansi=True).debug(message)
         return result
 
     @staticmethod
-    def is_equal_flat_dict(data_pre, data_post, check_keys = None):
+    def __is_equal_flat_dict(data_pre, data_post, check_keys = None):
         """
-        is_equal_flat_dict Helper to compare keys in flat dict
+        __is_equal_flat_dict Helper to compare keys in flat dict
 
         Example:
         --------
@@ -113,3 +115,24 @@ class Operator():
                     error = ErrorMessage(key=check_key, pre=data_pre[check_key], post=data_post[check_key])
                     result.errors.append(error)
         return result
+
+    @staticmethod
+    def is_equal(data_pre, data_post, keys: list):
+        """
+        is_equal Generic entrypoint for is_equal operator
+
+        WIP
+
+        Args:
+            keys (list): [description]
+
+        Returns:
+            [type]: [description]
+        """
+        # Load operator for nested dict
+        if any(isinstance(d, dict) for d in data_pre.values()):
+            return Operator.__is_equal_nested_dicts(data_post=data_post, data_pre=data_pre, check_keys=keys)
+        if isinstance(data_pre, dict):
+            return Operator.__is_equal_flat_dict(data_post=data_post, data_pre=data_pre, check_keys=keys)
+        logger.critical('Data structure not yet supported')
+        return TestResult(state=False, errors=[])

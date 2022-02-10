@@ -40,7 +40,7 @@ class TestDefinition(BaseModel):
     name: str
     command: str
     snapshot: SnapshotCommand
-    check_key: str
+    check_keys: List[str]
     iterator: str = 'key'
     status: bool = False
     checked: bool = False

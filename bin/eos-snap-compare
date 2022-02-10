@@ -26,6 +26,8 @@ def read_cli():
                         help='Which snapshot POST is saved')
     parser.add_argument('--verbose', required=False,
                         default='info', help='Script verbosity')
+    parser.add_argument('--nocolorize', required=False,
+                        action="store_false", help='Remove fancy color in your output')
     return parser.parse_args()
 
 
@@ -33,7 +35,11 @@ if __name__ == '__main__':
     pp = pprint.PrettyPrinter(indent=4)
     cli_options = read_cli()
     logger.remove()
-    logger.add(sys.stderr, level=cli_options.verbose.upper(), colorize=True)
+    logger.add(
+        sys.stderr,
+        level=cli_options.verbose.upper(),
+        colorize=cli_options.nocolorize
+    )
 
     configuration = load_configuration(cli_options.configuration)
     logger.debug('configuration is {}', configuration)
@@ -55,10 +61,8 @@ if __name__ == '__main__':
             logger.debug(f'  - pre: {test_case.snapshot.path_pre}')
             logger.debug(f'  - post: {test_case.snapshot.path_post}')
             snap_tester = SnapshotTester(
-                path_pre=test_case.snapshot.path_pre,
-                path_post=test_case.snapshot.path_post,
-                iterator=test_case.iterator
+                test=test_case
             )
-            result = getattr(snap_tester, test_case.operator)(keys=[test_case.check_key])
+            result = snap_tester.run_tests()
             stdout_message = f'  * Test result is: {result.dict()}'
             logger.warning(stdout_message) if result.state else logger.error(stdout_message)

@@ -3,6 +3,8 @@
 
 import os
 import json
+from typing import List
+from unittest import TestCase
 from jsonpath_ng.ext import parse
 from loguru import logger
 from ..resources.models import TestResult
@@ -13,7 +15,7 @@ class SnapshotTester():
     """
     SnapshotTester Run test comparison between 2 snapshots
     """
-    def __init__(self, path_pre: any, path_post: any, iterator: str = None):
+    def __init__(self, test: TestCase):
         """
         __init__ Constructor
 
@@ -24,9 +26,12 @@ class SnapshotTester():
             path_post (any): [description]
             iterator (str, optional): JSON path query to iterate over data. Defaults to None.
         """
-        self.pre = self._load_data(path=path_pre)
-        self.post = self._load_data(path=path_post)
-        self.iterator = iterator
+        self.pre = self._load_data(path=test.snapshot.path_pre)
+        self.post = self._load_data(path=test.snapshot.path_post)
+        # self.iterator = test.iterator
+        # self.operator = test.operator
+        # self.keys = test.check_key
+        self.test = test
 
     def _load_data(self, path):
         """
@@ -77,24 +82,7 @@ class SnapshotTester():
         else:
             return self._clean_structure([match.value for match in jsonpath_expr.find(self.post)])
 
-    def is_equal(self, keys: list):
-        """
-        is_equal Generic entrypoint for is_equal operator
-
-        WIP
-
-        Args:
-            keys (list): [description]
-
-        Returns:
-            [type]: [description]
-        """
-        data_pre = self._json_extract(stage='pre', iterator=self.iterator)
-        data_post = self._json_extract(stage='post', iterator=self.iterator)
-        # Load operator for nested dict
-        if any(isinstance(d, dict) for d in data_pre.values()):
-            return Operator.is_equal_nested_dicts(data_post=data_post, data_pre=data_pre, check_keys=keys)
-        if isinstance(data_pre, dict):
-            return Operator.is_equal_flat_dict(data_post=data_post, data_pre=data_pre, check_keys=keys)
-        logger.critical('Data structure not yet supported')
-        return TestResult(state=False, errors=[])
+    def run_tests(self):
+        data_pre = self._json_extract(stage='pre', iterator=self.test.iterator)
+        data_post = self._json_extract(stage='post', iterator=self.test.iterator)
+        return getattr(Operator, self.test.operator)(data_pre=data_pre, data_post=data_post, keys=self.test.check_keys)

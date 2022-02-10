@@ -5,13 +5,21 @@ eos_snapshot:
   test_cases:
     - name: EOS Version
       command: 'show version'
-      check_key: 'version'
+      check_keys: ['version']
       iterator: '$'
       snapshot: {}
       operator: is_equal
+
     - name: BGP Session
       command: 'show bgp evpn summary'
-      check_key: 'peerState'
+      check_keys: ['peerState']
+      iterator: 'vrfs.default.peers[*]'
+      snapshot: {}
+      operator: is_equal
+
+    - name: BGP Session Maintenance
+      command: 'show bgp evpn summary'
+      check_keys: ['underMaintenance', 'version']
       iterator: 'vrfs.default.peers[*]'
       snapshot: {}
       operator: is_equal
