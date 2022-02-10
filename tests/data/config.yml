@@ -3,21 +3,15 @@ eos_snapshot:
     - veos01
 
   test_cases:
-    - name: Test01
+    - name: EOS Version
       command: 'show version'
-      path: 'unset'
-      check_key: 'unset'
-      iterator: 'unset'
+      check_key: 'version'
+      iterator: '$'
       snapshot: {}
-    - name: Test02
-      command: 'show interfaces description'
-      path: 'unset'
-      check_key: 'unset'
-      iterator: 'unset'
-      snapshot: {}
-    - name: Test01
+      operator: is_equal
+    - name: BGP Session
       command: 'show bgp evpn summary'
-      path: 'unset'
-      check_key: 'unset'
-      iterator: 'unset'
+      check_key: 'peerState'
+      iterator: 'vrfs.default.peers[*]'
       snapshot: {}
+      operator: is_equal

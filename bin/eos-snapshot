@@ -9,6 +9,7 @@ import argparse
 from importlib.resources import path
 from jsonpath_ng.ext import parse
 from loguru import logger
+from eos_snap import load_configuration
 from eos_snap.devices import DeviceEos
 from eos_snap.test import TestCollection
 
@@ -27,14 +28,6 @@ def read_cli():
                         default='info', help='Script verbosity')
     return parser.parse_args()
 
-def load_configuration(yaml_path: str):
-    with open(yaml_path, "r") as stream:
-        try:
-            configuration = yaml.safe_load(stream)
-        except yaml.YAMLError as exc:
-            logger.error(exc)
-    return configuration['eos_snapshot']
-
 if __name__ == '__main__':
     cli_options = read_cli()
     logger.remove()
@@ -48,6 +41,6 @@ if __name__ == '__main__':
         logger.info('  - Grab data from device {}', device)
         eos = DeviceEos(
             hostname=device, test_cases=configuration['test_cases'],
-            snapshot_root=cli_options.rootpath
+            snapshot_root=cli_options.rootpath,
         )
-        eos.generate_snapshot(prefix='pre')
+        eos.generate_snapshot(prefix=cli_options.stage)

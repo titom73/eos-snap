@@ -1,0 +1,64 @@
+#!/usr/bin/python
+# coding: utf-8 -*-
+
+import sys
+import os
+import argparse
+from loguru import logger
+from eos_snap import load_configuration
+from eos_snap.devices import DeviceEos
+from eos_snap.snapshot.tester import SnapshotTester
+import pprint
+
+
+def read_cli():
+    parser = argparse.ArgumentParser(description='EOS Command snapshot script.')
+    parser.add_argument('--configuration', required=True,
+                        help='List of tests to snapshot')
+    parser.add_argument('--rootpath', required=False,
+                        default=str(os.getcwd()),
+                        help='Path where to save EOS snapshot')
+    parser.add_argument('--pre', required=False,
+                        default='pre',
+                        help='Which snapshot PRE is saved')
+    parser.add_argument('--post', required=False,
+                        default='post',
+                        help='Which snapshot POST is saved')
+    parser.add_argument('--verbose', required=False,
+                        default='info', help='Script verbosity')
+    return parser.parse_args()
+
+
+if __name__ == '__main__':
+    pp = pprint.PrettyPrinter(indent=4)
+    cli_options = read_cli()
+    logger.remove()
+    logger.add(sys.stderr, level=cli_options.verbose.upper(), colorize=True)
+
+    configuration = load_configuration(cli_options.configuration)
+    logger.debug('configuration is {}', configuration)
+
+    logger.info('Loading snapshot')
+    eos_collection = []
+    for device in configuration['devices']:
+        eos = DeviceEos(
+            hostname=device, test_cases=configuration['test_cases'],
+            snapshot_root=cli_options.rootpath
+        )
+        eos.load_saved_snapshot(prefix=cli_options.pre)
+        eos.load_saved_snapshot(prefix=cli_options.post)
+        eos_collection.append(eos)
+
+    for eos in eos_collection:
+        for test_case in eos.test_cases.collection:
+            logger.info(f'Load test [ {test_case.name} ]')
+            logger.debug(f'  - pre: {test_case.snapshot.path_pre}')
+            logger.debug(f'  - post: {test_case.snapshot.path_post}')
+            snap_tester = SnapshotTester(
+                path_pre=test_case.snapshot.path_pre,
+                path_post=test_case.snapshot.path_post,
+                iterator=test_case.iterator
+            )
+            result = getattr(snap_tester, test_case.operator)(keys=[test_case.check_key])
+            stdout_message = f'  * Test result is: {result.dict()}'
+            logger.warning(stdout_message) if result.state else logger.error(stdout_message)

@@ -4,9 +4,9 @@
 from cgi import test
 import json
 from typing import List
-from .pydantic import TestDefinition
+from .resources.models import TestDefinition
 from pydantic import parse_obj_as
-from .exceptions import *
+from .resources.exceptions import *
 
 
 class TestCollection():
